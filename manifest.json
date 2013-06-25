@@ -3,7 +3,7 @@
 
   "name": "Jing'd Emoticon Injector",
   "description": "This extension properly displays the jing'd emoticon in Github pull-requests.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "update_url": "http://jin.gd/chrome-ext/update.xml",
 
   "icons": {
@@ -11,6 +11,10 @@
     "48": "icon48.png",
     "128": "icon128.png"
   },
+
+  "web_accessible_resources": [
+    "jingd.png"
+  ],
 
   "content_scripts": [
     {
