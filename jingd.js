@@ -58,7 +58,9 @@
     forEach.call(elements, function(v,i){
       var obs = new MutationObserver(mutationCallback);
       var suggester = document.getElementById(v.getAttribute("data-suggester"));
-      obs.observe(suggester, {childList: true});
+      if (suggester) {
+        obs.observe(suggester, {childList: true});
+      }
     });
   }
 
