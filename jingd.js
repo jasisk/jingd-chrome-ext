@@ -15,8 +15,77 @@
   jingElement.setAttribute("align", "absmiddle");
   jingElement.setAttribute("src", JINGD_URL);
 
+  var inject = function(){
+    var broker = {};
+
+    window.addEventListener("message", function(evt){
+      var inst, obj = JSON.parse(evt.data);
+      if (obj.fromExt && obj.nonce && broker[obj.nonce]){
+        inst = broker[obj.nonce];
+        inst.args[0] = obj.msg;
+        inst.success.apply(this, inst.args);
+        delete broker[obj.nonce];
+      }
+    }, false);
+
+    function sendMessage(nonce, msg){
+      var obj = {
+            fromPage: true,
+            nonce: nonce,
+            msg: msg
+          };
+      window.postMessage(JSON.stringify(obj), "*");
+    }
+
+    $.ajax = function(ajax){
+      return function(obj){
+        if (/^\/preview/i.test(obj.url)) {
+          var nonce = Array.prototype.slice.call(
+                window.crypto.getRandomValues(new Uint8Array(8))
+              ).join("");
+          obj.success = function(success){
+            return function(){
+              var args = Array.prototype.slice.call(arguments);
+              broker[nonce] = {
+                args: args,
+                success: success
+              };
+              sendMessage(nonce, args[0]);
+            };
+          }(obj.success);
+        }
+        ajax.apply(this, arguments);
+      };
+    }($.ajax);
+  };
+
   findNodesWithMatch();
   setupSuggesterElements();
+
+  setupMessagePassing();
+  injectScript();
+
+  function injectScript(){
+    var script = document.createElement("script");
+    script.textContent = "(" + inject.toString() + ")();"
+    window.document.body.appendChild(script);
+  }
+
+  function setupMessagePassing(){
+    window.addEventListener("message", function(evt){
+      var inst, obj = JSON.parse(evt.data);
+      if (obj.fromPage){
+        delete obj.fromPage;
+        obj.fromExt = true;
+        obj.msg = replaceWithJingString(obj.msg);
+        window.postMessage(JSON.stringify(obj), "*");
+      }
+    }, false);
+  }
+
+  function replaceWithJingString(text){
+    return text.split(MATCH_REGEX).join(jingElement.outerHTML);
+  }
 
   function mutationCallback(obj){
     obj.forEach(function(record){
